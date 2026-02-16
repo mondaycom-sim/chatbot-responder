@@ -1,0 +1,54 @@
+name: Release Chatbot Services
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */4 * * *'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-chatbot:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AUTOGEN_CONFIG: '{"model": "gpt-4"}'
+      LLAMAINDEX_CACHE_DIR: /tmp/llama_cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (Chatbot Responder)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::681949398544:role/monday-chatbot-responder-role
+          aws-region: us-east-1
+
+      - name: Deploy Chatbot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          zip -r chatbot.zip src/ requirements.txt
+          aws lambda update-function-code \
+            --function-name monday-chatbot-responder \
+            --zip-file fileb://chatbot.zip
+
+  deploy-doc-generator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (Doc Generator)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::681949398544:role/monday-doc-generator-role
+          aws-region: us-east-1
+
+      - name: Deploy Doc Generator
+        run: |
+          zip -r docgen.zip src/ requirements.txt
+          aws lambda update-function-code \
+            --function-name monday-doc-generator \
+            --zip-file fileb://docgen.zip
