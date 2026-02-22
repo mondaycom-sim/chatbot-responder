@@ -9,3 +9,7 @@ for intelligent board interactions.
 - **CrewAI:** Multi-agent task orchestration
 - **AutoGen:** Conversational agent patterns
 - **LlamaIndex:** Knowledge base retrieval and indexing
+
+## Deployment
+
+Automatically deployed to AWS Lambda via GitHub Actions on push to `main`.
